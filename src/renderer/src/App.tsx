@@ -25,7 +25,6 @@ function App(): React.JSX.Element {
           </a>
         </div>
       </div>
-      <Versions></Versions>
     </main>
   )
 }
