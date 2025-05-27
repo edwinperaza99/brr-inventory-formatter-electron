@@ -23,6 +23,7 @@ export default function App(): React.JSX.Element {
   const [initials, setInitials] = useState('')
   const [date, setDate] = useState<Date | undefined>(new Date())
 
+  // Handle Excel processing
   function handleExcelProcess() {
     if (!file) return
 
@@ -59,7 +60,7 @@ export default function App(): React.JSX.Element {
       const newWorkbook = XLSX.utils.book_new()
       XLSX.utils.book_append_sheet(newWorkbook, newSheet, 'Sheet1')
 
-      // Generate file name
+      // Generate filename
       const dateStr = date ? format(date, 'yyyy-MM-dd') : 'no-date'
       const fileName = `Formatted-${initials || 'no-initials'}-${dateStr}.xlsx`
 
@@ -72,7 +73,7 @@ export default function App(): React.JSX.Element {
     reader.readAsArrayBuffer(file)
   }
 
-  // XLSX writeFile to Blob helper
+  // Helper to convert workbook to Blob
   function workbook2blob(workbook: XLSX.WorkBook): Promise<Blob> {
     const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
     return new Blob([wbout], { type: 'application/octet-stream' })
@@ -82,77 +83,117 @@ export default function App(): React.JSX.Element {
     <main className="container mx-auto flex flex-col justify-center items-center min-h-screen">
       <Navbar />
       <h1 className="text-center text-3xl sm:text-5xl my-5">RBR List Formatter</h1>
-
       <form
-        className="space-y-4 w-full max-w-md"
+        className="space-y-3"
         onSubmit={(e) => {
           e.preventDefault()
           handleExcelProcess()
         }}
       >
-        <Input
-          type="file"
-          accept=".xlsx,.xls"
-          onChange={(e) => {
-            setFile(e.target.files?.[0] || null)
-          }}
-        />
-
-        <Input
-          placeholder="Your initials"
-          value={initials}
-          onChange={(e) => setInitials(e.target.value)}
-        />
-
-        <Popover modal={true}>
-          <PopoverTrigger>
-            <Button
-              variant="outline"
-              className={cn(
-                'w-full justify-start text-left font-normal',
-                !date && 'text-muted-foreground'
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {date ? format(date, 'PPP') : <span>Pick a date</span>}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
-            <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
-          </PopoverContent>
-        </Popover>
-
-        {/* Switches */}
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2">
-            <Switch id="author" checked={removeAuthor} onCheckedChange={setRemoveAuthor} />
-            <Label htmlFor="author">Delete "Author" Column</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch id="location" checked={removeLocation} onCheckedChange={setRemoveLocation} />
-            <Label htmlFor="location">Delete "Location" Column</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch id="isbn" checked={removeISBN} onCheckedChange={setRemoveISBN} />
-            <Label htmlFor="isbn">Delete "ISBN/ISSN" Column</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch id="edition" checked={removeEdition} onCheckedChange={setRemoveEdition} />
-            <Label htmlFor="edition">Delete "Edition" Column</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="availability"
-              checked={removeAvailability}
-              onCheckedChange={setRemoveAvailability}
-            />
-            <Label htmlFor="availability">Delete "Availability" Column</Label>
-          </div>
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="author"
+            checked={removeAuthor}
+            onCheckedChange={(checked) => setRemoveAuthor(checked)}
+          />
+          <Label htmlFor="author">Delete &quot;Author&quot; Column</Label>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="location"
+            checked={removeLocation}
+            onCheckedChange={(checked) => setRemoveLocation(checked)}
+          />
+          <Label htmlFor="location">Delete &quot;Location&quot; Column</Label>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="isbn"
+            checked={removeISBN}
+            onCheckedChange={(checked) => setRemoveISBN(checked)}
+          />
+          <Label htmlFor="isbn">Delete &quot;ISBN/ISSN&quot; Column</Label>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="edition"
+            checked={removeEdition}
+            onCheckedChange={(checked) => setRemoveEdition(checked)}
+          />
+          <Label htmlFor="edition">Delete &quot;Edition&quot; Column</Label>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="availability"
+            checked={removeAvailability}
+            onCheckedChange={(checked) => setRemoveAvailability(checked)}
+          />
+          <Label htmlFor="availability">Delete &quot;Availability&quot; Column</Label>
         </div>
 
-        <Button type="submit" className="w-full">
-          Process Excel File
-        </Button>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="end-date">End Date:</Label>
+          <Popover>
+            <PopoverTrigger>
+              <Button
+                id="end-date"
+                variant={'outline'}
+                className={cn(
+                  'w-[280px] justify-start text-left font-normal',
+                  !date && 'text-muted-foreground'
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {date ? format(date, 'PPP') : <span>Pick a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              {date && (
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setDate(undefined)
+                    localStorage.removeItem('endDate')
+                  }}
+                  className="w-full"
+                >
+                  Clear Date
+                </Button>
+              )}
+              <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="initials">Initials:</Label>
+          <Input
+            id="initials"
+            type="text"
+            placeholder="This field is optional"
+            className="px-4"
+            value={initials}
+            onChange={(e) => setInitials(e.target.value)}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="file-upload">Upload Excel File:</Label>
+          <Input
+            id="file-upload"
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={(e) => {
+              setFile(e.target.files?.[0] || null)
+            }}
+          />
+        </div>
+
+        <div className="mt-4">
+          <Button type="submit" disabled={!file} className="w-full">
+            {false ? 'Processing...' : 'Process File'}
+          </Button>
+        </div>
       </form>
     </main>
   )
