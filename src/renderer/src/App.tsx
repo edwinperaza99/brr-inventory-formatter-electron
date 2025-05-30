@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import * as XLSX from 'xlsx'
-import { saveAs } from 'file-saver'
 import { format } from 'date-fns'
 import { Calendar as CalendarIcon } from 'lucide-react'
 
@@ -13,6 +12,9 @@ import { Popover, PopoverTrigger, PopoverContent } from '@renderer/components/ui
 import { Calendar } from '@renderer/components/ui/calendar'
 import { cn } from '@renderer/lib/utils'
 
+interface ElectronFile extends File {
+  path: string
+}
 export default function App(): React.JSX.Element {
   const [file, setFile] = useState<File | null>(null)
   const [removeAuthor, setRemoveAuthor] = useState(false)
@@ -22,61 +24,62 @@ export default function App(): React.JSX.Element {
   const [removeAvailability, setRemoveAvailability] = useState(false)
   const [initials, setInitials] = useState('')
   const [date, setDate] = useState<Date | undefined>(new Date())
+  const [isLoading, setIsLoading] = useState(false)
 
-  // Handle Excel processing
-  function handleExcelProcess() {
-    if (!file) return
-
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const data = new Uint8Array(e.target?.result as ArrayBuffer)
-      const workbook = XLSX.read(data, { type: 'array' })
-      const sheetName = workbook.SheetNames[0]
-      const worksheet = workbook.Sheets[sheetName]
-      const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][]
-
-      if (json.length === 0) return
-
-      const headers = json[0]
-      const body = json.slice(1)
-
-      const removeCols: string[] = []
-      if (removeAuthor) removeCols.push('Author')
-      if (removeLocation) removeCols.push('Location')
-      if (removeISBN) removeCols.push('ISBN/ISSN')
-      if (removeEdition) removeCols.push('Edition')
-      if (removeAvailability) removeCols.push('Availability')
-
-      const indicesToRemove = headers
-        .map((h, i) => (removeCols.includes(h as string) ? i : -1))
-        .filter((i) => i !== -1)
-
-      const newHeaders = headers.filter((_, i) => !indicesToRemove.includes(i))
-      const newBody = body.map((row) => row.filter((_, i) => !indicesToRemove.includes(i)))
-      const newData = [newHeaders, ...newBody]
-
-      // Create a new sheet
-      const newSheet = XLSX.utils.aoa_to_sheet(newData)
-      const newWorkbook = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(newWorkbook, newSheet, 'Sheet1')
-
-      // Generate filename
-      const dateStr = date ? format(date, 'yyyy-MM-dd') : 'no-date'
-      const fileName = `Formatted-${initials || 'no-initials'}-${dateStr}.xlsx`
-
-      const xlsxBlob = workbook2blob(newWorkbook)
-      xlsxBlob.then((blob) => {
-        saveAs(blob, fileName)
-      })
-    }
-
-    reader.readAsArrayBuffer(file)
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const uploadedFile = e.target.files?.[0] as ElectronFile | undefined
+    if (uploadedFile) setFile(uploadedFile)
   }
 
-  // Helper to convert workbook to Blob
-  function workbook2blob(workbook: XLSX.WorkBook): Promise<Blob> {
-    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
-    return new Blob([wbout], { type: 'application/octet-stream' })
+  const handlePickFile = async () => {
+    if (window.electronAPI?.pickFile) {
+      const selectedFilePath = await window.electronAPI.pickFile()
+      if (selectedFilePath) {
+        const fakeFile = {
+          name: selectedFilePath.split('/').pop() || '',
+          path: selectedFilePath
+        } as ElectronFile
+        setFile(fakeFile)
+      }
+    } else {
+      alert('Electron API not available')
+    }
+  }
+
+  const handleFileUpload = async () => {
+    if (!file) return
+
+    setIsLoading(true)
+
+    // Prepare data for main process
+    const requestData = {
+      filePath: (file as ElectronFile).path,
+      removeAuthor,
+      removeLocation,
+      removeISBN,
+      removeEdition,
+      removeAvailability,
+      initials,
+      endDate: date ? format(date, 'MM/dd/yyyy') : undefined
+    }
+
+    try {
+      // Use Electron IPC if available
+      if (window.electronAPI) {
+        const savePath = await window.electronAPI.processFile(requestData)
+        if (savePath) {
+          alert(`File saved successfully at:\n${savePath}`)
+        } else {
+          alert('File processing canceled')
+        }
+      } else {
+        alert('Electron API not available')
+      }
+    } catch (error) {
+      alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -87,7 +90,7 @@ export default function App(): React.JSX.Element {
         className="space-y-3"
         onSubmit={(e) => {
           e.preventDefault()
-          handleExcelProcess()
+          handleFileUpload()
         }}
       >
         <div className="flex items-center space-x-2">
@@ -178,20 +181,15 @@ export default function App(): React.JSX.Element {
         </div>
 
         <div className="flex flex-col gap-1">
-          <Label htmlFor="file-upload">Upload Excel File:</Label>
-          <Input
-            id="file-upload"
-            type="file"
-            accept=".xlsx,.xls"
-            onChange={(e) => {
-              setFile(e.target.files?.[0] || null)
-            }}
-          />
+          <Label>Upload Excel File:</Label>
+          <Button type="button" onClick={handlePickFile}>
+            {file ? `Selected: ${file.name}` : 'Pick File'}
+          </Button>
         </div>
 
         <div className="mt-4">
-          <Button type="submit" disabled={!file} className="w-full">
-            {false ? 'Processing...' : 'Process File'}
+          <Button type="submit" disabled={!file || isLoading} className="w-full">
+            {isLoading ? 'Processing...' : 'Process File'}
           </Button>
         </div>
       </form>
