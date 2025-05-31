@@ -299,7 +299,6 @@ ipcMain.handle('process-file', async (_, data) => {
     const xlsxBufferFinal = await excelWorkbook.xlsx.writeBuffer()
     fs.writeFileSync(savePath, Buffer.from(xlsxBufferFinal))
     console.log('File saved successfully:', savePath)
-    // XLSX.writeFile(workbook, savePath)
     return savePath
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)

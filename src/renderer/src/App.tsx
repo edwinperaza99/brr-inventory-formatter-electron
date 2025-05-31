@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
-import { Calendar as CalendarIcon } from 'lucide-react'
+import { Calendar as CalendarIcon, FileText } from 'lucide-react'
 
 import Navbar from '@renderer/components/nav-bar'
 import { Button } from '@renderer/components/ui/button'
@@ -45,11 +45,6 @@ export default function App(): React.JSX.Element {
     const savedDate = localStorage.getItem('endDate')
     setDate(savedDate ? new Date(savedDate) : undefined)
   }, [])
-
-  //   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //     const uploadedFile = e.target.files?.[0] as ElectronFile | undefined
-  //     if (uploadedFile) setFile(uploadedFile)
-  //   }
 
   const handlePickFile = async (): Promise<void> => {
     if (window.electronAPI?.pickFile) {
@@ -99,6 +94,7 @@ export default function App(): React.JSX.Element {
       alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsLoading(false)
+      setFile(null)
     }
   }
 
@@ -202,8 +198,14 @@ export default function App(): React.JSX.Element {
 
         <div className="flex flex-col gap-1">
           <Label>Upload Excel File:</Label>
-          <Button type="button" onClick={handlePickFile}>
-            {file ? `Selected: ${file.name}` : 'Pick File'}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handlePickFile}
+            className="flex items-center gap-2"
+          >
+            <FileText className="w-4 h-4" />
+            {file ? file.name : 'Pick File'}
           </Button>
         </div>
 
