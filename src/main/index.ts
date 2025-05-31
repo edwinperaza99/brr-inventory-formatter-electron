@@ -1,10 +1,10 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
-import { join } from 'path'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import fs from 'fs'
-import * as XLSX from 'xlsx'
+import { electronApp, is, optimizer } from '@electron-toolkit/utils'
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import ExcelJS, { BorderStyle } from 'exceljs'
+import fs from 'fs'
+import { join } from 'path'
+import * as XLSX from 'xlsx'
 
 function createWindow(): void {
   // Create the browser window.
@@ -12,6 +12,7 @@ function createWindow(): void {
     width: 900,
     height: 670,
     show: false,
+    title: 'RBR Inventory Formatter',
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {

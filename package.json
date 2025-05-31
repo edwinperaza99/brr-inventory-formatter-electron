@@ -1,10 +1,10 @@
 {
   "name": "rbr-inventory-formatter-electron",
   "version": "1.0.0",
-  "description": "An Electron application with React and TypeScript",
+  "description": "An Electron application with React and TypeScript that formats inventory data.",
   "main": "./out/main/index.js",
-  "author": "example.com",
-  "homepage": "https://electron-vite.org",
+  "author": "edwinperaza.com",
+  "homepage": "https://rbr-inventory-formatter.edwinperaza.com",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",
