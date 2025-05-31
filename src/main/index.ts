@@ -82,7 +82,7 @@ ipcMain.handle('process-file', async (_, data) => {
   console.log('Received data in main process:', data)
   const { filePath, ...options } = data
   const endDate = options.endDate
-  const initials = options.initials || 'tempValue'
+  const initials = options.initials || ''
 
   if (!filePath) {
     throw new Error('No filePath provided.')
@@ -147,7 +147,7 @@ ipcMain.handle('process-file', async (_, data) => {
       horizontal: 'center',
       vertical: 'middle'
     }
-    const defaultInitials = options.initials || 'tempValue'
+    const defaultInitials = options.initials || ''
     worksheet.getRow(2).getCell(lastColumnIndex + 2).value = defaultInitials
     worksheet.getRow(2).getCell(lastColumnIndex + 2).alignment = {
       horizontal: 'center',
@@ -250,7 +250,7 @@ ipcMain.handle('process-file', async (_, data) => {
       })
 
       if (initialsColumnIndex) {
-        const message = `End date updated to ${endDate} - ${initials || 'N/A'}`
+        const message = `End date updated to ${endDate} - ${initials || ''}`
         worksheet.getRow(1).getCell(initialsColumnIndex).value = message
         worksheet.getRow(1).getCell(initialsColumnIndex).alignment = {
           horizontal: 'right'
