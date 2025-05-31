@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import * as XLSX from 'xlsx'
+import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import { Calendar as CalendarIcon } from 'lucide-react'
 
@@ -26,12 +25,33 @@ export default function App(): React.JSX.Element {
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const uploadedFile = e.target.files?.[0] as ElectronFile | undefined
-    if (uploadedFile) setFile(uploadedFile)
-  }
+  useEffect(() => {
+    localStorage.setItem('removeAuthor', JSON.stringify(removeAuthor))
+    localStorage.setItem('removeLocation', JSON.stringify(removeLocation))
+    localStorage.setItem('removeISBN', JSON.stringify(removeISBN))
+    localStorage.setItem('removeEdition', JSON.stringify(removeEdition))
+    localStorage.setItem('removeAvailability', JSON.stringify(removeAvailability))
+    localStorage.setItem('initials', initials)
+    localStorage.setItem('endDate', date ? date.toISOString() : '')
+  }, [removeAuthor, removeLocation, removeISBN, removeEdition, removeAvailability, initials, date])
 
-  const handlePickFile = async () => {
+  useEffect(() => {
+    setRemoveAuthor(JSON.parse(localStorage.getItem('removeAuthor') || 'false'))
+    setRemoveLocation(JSON.parse(localStorage.getItem('removeLocation') || 'false'))
+    setRemoveISBN(JSON.parse(localStorage.getItem('removeISBN') || 'false'))
+    setRemoveEdition(JSON.parse(localStorage.getItem('removeEdition') || 'false'))
+    setRemoveAvailability(JSON.parse(localStorage.getItem('removeAvailability') || 'false'))
+    setInitials(localStorage.getItem('initials') || '')
+    const savedDate = localStorage.getItem('endDate')
+    setDate(savedDate ? new Date(savedDate) : undefined)
+  }, [])
+
+  //   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //     const uploadedFile = e.target.files?.[0] as ElectronFile | undefined
+  //     if (uploadedFile) setFile(uploadedFile)
+  //   }
+
+  const handlePickFile = async (): Promise<void> => {
     if (window.electronAPI?.pickFile) {
       const selectedFilePath = await window.electronAPI.pickFile()
       if (selectedFilePath) {
@@ -46,7 +66,7 @@ export default function App(): React.JSX.Element {
     }
   }
 
-  const handleFileUpload = async () => {
+  const handleFileUpload = async (): Promise<void> => {
     if (!file) return
 
     setIsLoading(true)

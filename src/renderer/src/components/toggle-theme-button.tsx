@@ -5,7 +5,7 @@ import { Moon, Sun } from 'lucide-react'
 export function ModeToggle(): React.JSX.Element {
   const { theme, setTheme } = useTheme()
 
-  const toggleTheme = () => {
+  const toggleTheme = (): void => {
     setTheme(theme === 'dark' ? 'light' : 'dark')
   }
 

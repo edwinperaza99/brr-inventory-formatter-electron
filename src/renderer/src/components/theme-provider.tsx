@@ -7,10 +7,10 @@ export function ThemeProvider({
 }: {
   children: React.ReactNode
   defaultTheme?: Theme
-}) {
+}): React.JSX.Element {
   const [theme, setThemeState] = useState<Theme>(defaultTheme)
 
-  const applyTheme = (themeToApply: Theme) => {
+  const applyTheme = (themeToApply: Theme): void => {
     if (themeToApply === 'dark') {
       document.documentElement.classList.add('dark')
     } else if (themeToApply === 'light') {
@@ -25,7 +25,7 @@ export function ThemeProvider({
     }
   }
 
-  const setTheme = (newTheme: Theme) => {
+  const setTheme = (newTheme: Theme): void => {
     setThemeState(newTheme)
     localStorage.setItem('theme', newTheme)
     applyTheme(newTheme)
@@ -38,10 +38,11 @@ export function ThemeProvider({
 
     if (savedTheme === 'system') {
       const media = window.matchMedia('(prefers-color-scheme: dark)')
-      const listener = () => applyTheme('system')
+      const listener = (): void => applyTheme('system')
       media.addEventListener('change', listener)
       return () => media.removeEventListener('change', listener)
     }
+    return undefined
   }, [defaultTheme])
 
   return <ThemeContext.Provider value={{ theme, setTheme }}>{children}</ThemeContext.Provider>
