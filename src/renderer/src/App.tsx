@@ -1,15 +1,14 @@
-import { useState, useEffect } from 'react'
-import { format } from 'date-fns'
-import { Calendar as CalendarIcon, FileText } from 'lucide-react'
-
 import Navbar from '@renderer/components/nav-bar'
 import { Button } from '@renderer/components/ui/button'
-import { Switch } from '@renderer/components/ui/switch'
-import { Label } from '@renderer/components/ui/label'
-import { Input } from '@renderer/components/ui/input'
-import { Popover, PopoverTrigger, PopoverContent } from '@renderer/components/ui/popover'
 import { Calendar } from '@renderer/components/ui/calendar'
+import { Input } from '@renderer/components/ui/input'
+import { Label } from '@renderer/components/ui/label'
+import { Popover, PopoverContent, PopoverTrigger } from '@renderer/components/ui/popover'
+import { Switch } from '@renderer/components/ui/switch'
 import { cn } from '@renderer/lib/utils'
+import { format } from 'date-fns'
+import { Calendar as CalendarIcon, FileText } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface ElectronFile extends File {
   path: string
@@ -26,25 +25,34 @@ export default function App(): React.JSX.Element {
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    localStorage.setItem('removeAuthor', JSON.stringify(removeAuthor))
-    localStorage.setItem('removeLocation', JSON.stringify(removeLocation))
-    localStorage.setItem('removeISBN', JSON.stringify(removeISBN))
-    localStorage.setItem('removeEdition', JSON.stringify(removeEdition))
-    localStorage.setItem('removeAvailability', JSON.stringify(removeAvailability))
-    localStorage.setItem('initials', initials)
-    localStorage.setItem('endDate', date ? date.toISOString() : '')
-  }, [removeAuthor, removeLocation, removeISBN, removeEdition, removeAvailability, initials, date])
+    const fetchSettings = async (): Promise<void> => {
+      const settings = await window.electronAPI?.getSettings?.()
+      if (!settings) return
+      setRemoveAuthor(!!settings.removeAuthor)
+      setRemoveLocation(!!settings.removeLocation)
+      setRemoveISBN(!!settings.removeISBN)
+      setRemoveEdition(!!settings.removeEdition)
+      setRemoveAvailability(!!settings.removeAvailability)
+      setInitials(settings.initials || '')
+      setDate(settings.endDate ? new Date(settings.endDate) : undefined)
+    }
+
+    fetchSettings()
+  }, [])
 
   useEffect(() => {
-    setRemoveAuthor(JSON.parse(localStorage.getItem('removeAuthor') || 'false'))
-    setRemoveLocation(JSON.parse(localStorage.getItem('removeLocation') || 'false'))
-    setRemoveISBN(JSON.parse(localStorage.getItem('removeISBN') || 'false'))
-    setRemoveEdition(JSON.parse(localStorage.getItem('removeEdition') || 'false'))
-    setRemoveAvailability(JSON.parse(localStorage.getItem('removeAvailability') || 'false'))
-    setInitials(localStorage.getItem('initials') || '')
-    const savedDate = localStorage.getItem('endDate')
-    setDate(savedDate ? new Date(savedDate) : undefined)
-  }, [])
+    const settings = {
+      removeAuthor,
+      removeLocation,
+      removeISBN,
+      removeEdition,
+      removeAvailability,
+      initials,
+      endDate: date ? date.toISOString() : undefined
+    }
+
+    window.electronAPI?.saveSettings?.(settings)
+  }, [removeAuthor, removeLocation, removeISBN, removeEdition, removeAvailability, initials, date])
 
   const handlePickFile = async (): Promise<void> => {
     if (window.electronAPI?.pickFile) {

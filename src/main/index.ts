@@ -317,3 +317,32 @@ ipcMain.handle('pick-file', async () => {
   }
   return null
 })
+
+// store settings in appData
+
+const settingsPath = join(app.getPath('userData'), 'settings.json')
+
+// Helper to load settings
+function loadSettings(): object {
+  try {
+    if (fs.existsSync(settingsPath)) {
+      return JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
+    }
+  } catch (error) {
+    console.error('Failed to load settings:', error)
+  }
+  return {}
+}
+
+// Helper to save settings
+function saveSettings(data): void {
+  try {
+    fs.writeFileSync(settingsPath, JSON.stringify(data, null, 2), 'utf-8')
+  } catch (error) {
+    console.error('Failed to save settings:', error)
+  }
+}
+
+// IPC handlers
+ipcMain.handle('get-settings', () => loadSettings())
+ipcMain.handle('save-settings', (_, data) => saveSettings(data))
